@@ -19,32 +19,32 @@ sweeprate    = 2    #0==slow, 1==medium(stab.,fine), 2==fast(stab.,coarse)
 filename  = '[S3_D3]IV.dat'
 
 #set gains
-IV_gain = 1e6 # V/A
-Vb_gain = 10  # mV/V
+Isd_gain = 1e-9 # A/V
+Vprobe_gain = 10  # mV/V
 Vg_gain = 1   # V/V
 unit = 1e9    # I from A to nA
 
 #set voltages 
-Vb_start = -10 #mV
-Vb_stop =  10 #mV
+Ib_start = -1e-9 #A
+Ib_stop =  1e-9 #A
 Vg =  0      #V
 
 ##########################################
 
 #voltage ramp settings (typically they shouldn't be changed)
-gate_step_init =  1  #V  ramp up and down speed to Vb_start and zero 
-bias_step_init =  1  #mV 
+gate_step_init =  0.1  #V  ramp up and down speed to Vb_start and zero 
+bias_step_init =  1e-10  # A 
 gate_time =        .01   #s
 bias_time =        .01   #s
 
 if sweeprate == 1:
-    bias_step = 0.01   #mV
+    bias_step = 1e-11   #A
 elif sweeprate == 2:
-    bias_step = 0.1   #mV
+    bias_step = 1e-10   #A
 else:
-    bias_step = 0.01   #mV 
+    bias_step = 5e-10   #A 
 
-Vb_vec = arange(Vb_start,Vb_stop+bias_step,bias_step)
+Isd_vec = np.arange(Ib_start,Ib_stop+bias_step,bias_step)
 
 #load instrument plugins
 instlist = qt.instruments.get_instrument_names()
@@ -73,11 +73,11 @@ except:
     B = 0
     
 #Create scaled variables  
-if Vb_gain != Vb_gain_prev or Vg_gain != Vg_gain_prev:
+if Isd_gain != Isd_gain_prev or Isd_gain != Isd_gain_prev:
     vi = qt.instruments.create('vi','virtual_composite')
-    vi.add_variable_scaled('Vb',ivvi,'dac1',1e3/Vb_gain,-.0*1e3/Vb_gain) #Vb in mV (offset to zero added related to 10 mV/V gain)
-    vi.add_variable_scaled('Vg',ivvi,'dac2',1e3/Vg_gain,+.0*1e3/Vg_gain)#Vg in mV (gain of the gate ampl. is 4 V/V)
-    Vb_gain_prev = Vb_gain
+    vi.add_variable_scaled('Isd',ivvi,'dac1',1/Isd_gain,-.0*1e3/Isd_gain) #Vb in mV (offset to zero added related to 10 mV/V gain)
+    vi.add_variable_scaled('Vg',ivvi,'dac2',1/Isd_gain,+.0*1e3/Isd_gain)#Vg in mV (gain of the gate ampl. is 4 V/V)
+    Isd_gain_prev = Isd_gain
     Vg_gain_prev = Vg_gain
 
 #ready vm
@@ -95,7 +95,7 @@ if vm.get_autozero() == True:
 
 #ramp up gate to fixed and starting values respectively
 ramp(vi,'Vg',Vg,gate_step_init,gate_time)
-ramp(vi,'Vb',Vb_start,bias_step_init,bias_time)
+ramp(vi,'Isd',Isd_start,bias_step_init,bias_time)
 qt.msleep(5)
 
 
@@ -111,11 +111,11 @@ data.add_value('I (nA)')                    #parameter to readout
 data.create_file(settings_file=False)
 
 #sweep Vb
-for Vb in Vb_vec: 
-    ramp(vi,'Vb',Vb,bias_step,bias_time)
+for Isd in Isd_vec: 
+    ramp(vi,'Isd',Isd,bias_step,bias_time)
     qt.msleep(0.05)
-    I = vm.get_readval()/IV_gain*unit 
-    data.add_data_point(Vb,I)
+    V = vm.get_readval()/Vprobe_gain*unit 
+    data.add_data_point(Isd,V)
     spyview_process(data,Vb_start,Vb_stop,0)
 
 plot2d = qt.Plot2D(data, coorddim=0, valdim=1)
@@ -124,7 +124,7 @@ data.close_file()
 
 #reset voltages and vm
 if returntozero:
-    ramp(vi,'Vb',0,bias_step_init,bias_time)
+    ramp(vi,'Isd',0,bias_step_init,bias_time)
     ramp(vi,'Vg',0,gate_step_init,gate_time)
 
 vm.set_trigger_continuous(True)
