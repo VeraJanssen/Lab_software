@@ -102,12 +102,12 @@ qt.msleep(5)
 T_mc_st = round(tsens.get_kelvin(0),2)
 print 'T_mc_start = %s K'%T_mc_st
 print 'Starting an iv curve at B = %s T' %B
-append ='_Vb%smV'%Vb_stop+'_Vg%sV'%Vg+'_B%sT'%B
+append ='_Isd%sA'%Vb_stop+'_Vg%sV'%Vg+'_B%sT'%B
 qt.config.set('datadir',directory)
 data = qt.Data(name=filename+append)
 tstr = strftime('%H%M%S_', data._localtime)
-data.add_coordinate('Vb (mV)')              #parameter to sweep
-data.add_value('I (nA)')                    #parameter to readout
+data.add_coordinate('Isd (A)')              #parameter to sweep
+data.add_value('V (V)')                    #parameter to readout
 data.create_file(settings_file=False)
 
 #sweep Vb
