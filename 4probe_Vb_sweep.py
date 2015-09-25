@@ -16,35 +16,35 @@ sweeprate    = 2    #0==slow, 1==medium(stab.,fine), 2==fast(stab.,coarse)
 
 ##########################################
 
-filename  = '[S3_D3]IV.dat'
+filename  = '4pr'
 
 #set gains
-Isd_gain = 1e-9 # A/V
-Vprobe_gain = 10  # mV/V
+Isd_gain = 100e-6 # A/V
+Vprobe_gain = 1000  # V/V
 Vg_gain = 1   # V/V
-unit = 1e9    # I from A to nA
+unit = 1    # I from A to nA
 
 #set voltages 
-Ib_start = -1e-9 #A
-Ib_stop =  1e-9 #A
+Isd_start = -10e-6 #A
+Isd_stop =  10e-6 #A
 Vg =  0      #V
 
 ##########################################
 
 #voltage ramp settings (typically they shouldn't be changed)
 gate_step_init =  0.1  #V  ramp up and down speed to Vb_start and zero 
-bias_step_init =  1e-10  # A 
+bias_step_init =  1e-6  # A 
 gate_time =        .01   #s
 bias_time =        .01   #s
 
 if sweeprate == 1:
     bias_step = 1e-11   #A
 elif sweeprate == 2:
-    bias_step = 1e-10   #A
+    bias_step = 1e-6   #A
 else:
     bias_step = 5e-10   #A 
 
-Isd_vec = np.arange(Ib_start,Ib_stop+bias_step,bias_step)
+Isd_vec = np.arange(Isd_start,Isd_stop+bias_step,bias_step)
 
 #load instrument plugins
 instlist = qt.instruments.get_instrument_names()
@@ -99,10 +99,10 @@ ramp(vi,'Isd',Isd_start,bias_step_init,bias_time)
 qt.msleep(5)
 
 
-T_mc_st = round(tsens.get_kelvin(0),2)
-print 'T_mc_start = %s K'%T_mc_st
+#T_mc_st = round(tsens.get_kelvin(0),2)
+#print 'T_mc_start = %s K'%T_mc_st
 print 'Starting an iv curve at B = %s T' %B
-append ='_Isd%sA'%Vb_stop+'_Vg%sV'%Vg+'_B%sT'%B
+append ='_Isd%sA'%Isd_stop+'_Vg%sV'%Vg+'_B%sT'%B
 qt.config.set('datadir',directory)
 data = qt.Data(name=filename+append)
 tstr = strftime('%H%M%S_', data._localtime)
@@ -110,13 +110,13 @@ data.add_coordinate('Isd (A)')              #parameter to sweep
 data.add_value('V (V)')                    #parameter to readout
 data.create_file(settings_file=False)
 
-#sweep Vb
+#sweep Isd
 for Isd in Isd_vec: 
     ramp(vi,'Isd',Isd,bias_step,bias_time)
     qt.msleep(0.05)
     V = vm.get_readval()/Vprobe_gain*unit 
     data.add_data_point(Isd,V)
-    spyview_process(data,Vb_start,Vb_stop,0)
+    spyview_process(data,Isd_start,Isd_stop,0)
 
 plot2d = qt.Plot2D(data, coorddim=0, valdim=1)
 plot2d.save_png(filepath=directory+'\\'+tstr+filename+append)

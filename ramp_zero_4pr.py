@@ -5,7 +5,7 @@ import numpy
 execfile('ramp.py') #to use ramp(instrument, parameter, value, step, time)
 #execfile('Tmeas.py')
 
-directory = 'D:\\Vera\\Measurements\\PbSe\\Sample_6_7_2015_13\\' #setting dir for all the next measurements 
+directory = 'D:\\Vera\\Measurements\\Test\\' #setting dir for all the next measurements 
 
 ivvi = qt.instruments.create('ivvi','IVVI',address='COM1')
 
